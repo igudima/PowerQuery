@@ -1,0 +1,108 @@
+let
+  Min = Date.From("01/01/2020"), 
+  Max = Date.From(DateTime.LocalNow()), 
+  Calendario = Table.FromList(
+    {Number.From(Min) .. Number.From(Max)}, 
+    Splitter.SplitByNothing(), 
+    type table [Data = Date.Type], 
+    null, 
+    ExtraValues.Error
+  ), 
+  Tipo_Data = Table.TransformColumnTypes(Calendario, {{"Data", type date}}), 
+  Ano = Table.AddColumn(Tipo_Data, "Ano", each Date.Year([Data]), type number), 
+  Ano_Atual = Table.AddColumn(
+    Ano, 
+    "Ano Atual", 
+    each if Date.Year(Max) = [Ano] then "Sim" else "Não", 
+    type text
+  ), 
+  Ano_YTD = Table.AddColumn(
+    Ano_Atual, 
+    "YTD", 
+    each if Date.IsInYearToDate([Data]) = false then "Não" else "Sim"
+  ), 
+  Ano_Anterior_YTD = Table.AddColumn(
+    Ano_YTD, 
+    "Ano Anterior YTD", 
+    each if Date.IsInYearToDate(Date.AddYears([Data], 1)) = false then "Não" else "Sim"
+  ), 
+  Trimestre = Table.AddColumn(
+    Ano_Anterior_YTD, 
+    "Trimestre", 
+    each Date.QuarterOfYear([Data]), 
+    type number
+  ), 
+  Mes_Numero = Table.AddColumn(Trimestre, "Mês Número", each Date.Month([Data]), type number), 
+  Mes_Completo = Table.AddColumn(
+    Mes_Numero, 
+    "Mês Completo", 
+    each Text.Proper(Date.MonthName([Data])), 
+    type text
+  ), 
+  Mes = Table.AddColumn(
+    Mes_Completo, 
+    "Mês", 
+    each Text.Proper(Text.Start([Mês Completo], 3)), 
+    type text
+  ), 
+  Mes_Ano = Table.AddColumn(
+    Mes, 
+    "Mês Ano", 
+    each ([Mês]) & "/" & Text.End(Text.From([Ano]), 2), 
+    type text
+  ), 
+  Mes_Atual = Table.AddColumn(
+    Mes_Ano, 
+    "Mês Atual", 
+    each if [Ano Atual] = "Sim" and Date.Month(Max) = [Mês] then "Sim" else "Não", 
+    type text
+  ), 
+  Mes_inicio = Table.AddColumn(
+    Mes_Atual, 
+    "Início Mês", 
+    each if Date.Day([Data]) = 1 then "Sim" else "Não"
+  ), 
+  Semana = Table.AddColumn(Mes_inicio, "Semana", each Date.WeekOfYear([Data]), type number), 
+  Semana_Atual = Table.AddColumn(
+    Semana, 
+    "Semana Atual", 
+    each 
+      if [Ano Atual] = "Sim" and Date.Month(Max) = [Mês] and Date.WeekOfYear(Max) = [Semana] then
+        "Sim"
+      else
+        "Não", 
+    type text
+  ), 
+  Semana_Data_Inicio = Table.AddColumn(
+    Semana_Atual, 
+    "Início Semana Data", 
+    each Date.StartOfWeek([Data]), 
+    type date
+  ), 
+  Semana_Inicio_Texto = Table.AddColumn(
+    Semana_Data_Inicio, 
+    "Início Semana", 
+    each "W" & Text.From([Semana]) & " - " & Text.From([Início Semana Data]), 
+    type text
+  ), 
+  Dia_Mes = Table.AddColumn(Semana_Inicio_Texto, "Dia Número", each Date.Day([Data])), 
+  Dia_SemanaNumero = Table.AddColumn(
+    Dia_Mes, 
+    "Dia Semana Número", 
+    each Date.DayOfWeek([Data]), 
+    type number
+  ), 
+  Dia_Semana_Completo = Table.AddColumn(
+    Dia_SemanaNumero, 
+    "Dia Semana Completo", 
+    each Text.Proper(Date.DayOfWeekName([Data])), 
+    type text
+  ), 
+  Dia_Semana = Table.AddColumn(
+    Dia_Semana_Completo, 
+    "Dia Semana", 
+    each Text.Proper(Text.Start(Date.DayOfWeekName([Data]), 3)), 
+    type text
+  )
+in
+  Dia_Semana
