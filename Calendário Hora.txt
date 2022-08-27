@@ -1,0 +1,67 @@
+let
+  Lista = {0 .. 86399}, 
+  Tabela = Table.FromList(Lista, Splitter.SplitByNothing(), null, null, ExtraValues.Error), 
+  Tipo = Table.TransformColumnTypes(Tabela, {{"Column1", Int64.Type}}), 
+  Nome_Col = Table.RenameColumns(Tipo, {{"Column1", "Segundo"}}), 
+  Duracao = Table.AddColumn(Nome_Col, "Duração", each #duration(0, 0, 0, [Segundo]), type duration), 
+  Hora = Table.AddColumn(
+    Duracao, 
+    "Hora", 
+    each #time(Duration.Hours([Duração]), Duration.Minutes([Duração]), Duration.Seconds([Duração])), 
+    type time
+  ), 
+  Remover_Coluna = Table.RemoveColumns(Hora, {"Duração", "Segundo"}), 
+  Hora_Num = Table.AddColumn(Remover_Coluna, "Hora Num", each Time.Hour([Hora]), Int64.Type), 
+  Minuto_Num = Table.AddColumn(Hora_Num, "Minuto Num", each Time.Minute([Hora]), Int64.Type), 
+  Segundo_Num = Table.AddColumn(Minuto_Num, "Segundo Num", each Time.Second([Hora]), Int64.Type), 
+  AM_PM = Table.AddColumn(
+    Segundo_Num, 
+    "AMPM", 
+    each if [Hora Num] < 12 then "AM" else "PM", 
+    type text
+  ), 
+  Hora_AM_PM = Table.AddColumn(
+    AM_PM, 
+    "Hora AMPM", 
+    each 
+      if [Hora Num] = 0 then
+        "12 AM"
+      else if [Hora Num] >= 1 and [Hora Num] <= 11 then
+        Number.ToText([Hora Num]) & " AM"
+      else if [Hora Num] = 12 then
+        "12 PM"
+      else if [Hora Num] >= 13 then
+        Number.ToText([Hora Num] - 12) & " PM"
+      else
+        "Unknown", 
+    type text
+  ), 
+  Periodo = Table.AddColumn(
+    Hora_AM_PM, 
+    "Período", 
+    each 
+      if [Hora Num] >= 0 and [Hora Num] <= 5 then
+        "12AM to 6AM"
+      else if [Hora Num] >= 6 and [Hora Num] <= 11 then
+        "6AM to 12PM"
+      else if [Hora Num] >= 12 and [Hora Num] <= 17 then
+        "12PM to 6PM"
+      else if [Hora Num] >= 18 and [Hora Num] <= 23 then
+        "6PM to 12AM"
+      else
+        "Unknown", 
+    type text
+  ), 
+  Inicio_Horario_Comercial = 8, 
+  Fim_Horario_Comercial = 18, 
+  Horario_Comercial = Table.AddColumn(
+    Periodo, 
+    "Horário Comercial", 
+    each 
+      if [Hora Num] >= Inicio_Horario_Comercial and [Hora Num] - 1 <= Fim_Horario_Comercial then
+        "Sim"
+      else
+        "Não"
+  )
+in
+  Horario_Comercial
