@@ -1,0 +1,21 @@
+let
+  Fonte = [Letra = {1 .. 78}], 
+  Conversao = Record.ToTable(Fonte), 
+  Tranposta = Table.Transpose(Conversao), 
+  Cabecalhos = Table.PromoteHeaders(Tranposta, [PromoteAllScalars = true]), 
+  Tipo = Table.TransformColumnTypes(Cabecalhos, {{"Letra", type any}}), 
+  Expandido = Table.ExpandListColumn(Tipo, "Letra"), 
+  TipoLetra = Table.TransformColumnTypes(Expandido, {{"Letra", Int64.Type}}), 
+  Resultado = Table.AddColumn(
+    TipoLetra, 
+    "Letra Ajustada", 
+    each 
+      if [Letra] < 27 then
+        Character.FromNumber([Letra] + 64)
+      else if [Letra] < 53 then
+        Character.FromNumber([Letra] + 38) & Text.From([Letra] - 26)
+      else
+        Character.FromNumber([Letra] + 12) & Character.FromNumber([Letra] + 12) & Text.From([Letra] - 52)
+  )
+in
+  Resultado
