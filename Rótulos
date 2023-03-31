@@ -1,0 +1,16 @@
+let
+  Source = Sql.Database(DBSERVER, DBINSTANCE), 
+  // #6213 - Dashboard Movimentações
+  MOVIMENTACOES = Source{[Schema = "COGNA", Item = "DW_FINANCEIRO_MOVIMENTACOES"]}[Data],
+  // Tabela com os rótulos do Servidor
+  Rotulos_Servidor = Table.ColumnNames(MOVIMENTACOES), 
+  // Tabela com os rótulos já ajustados
+  Tabela_Rotulos = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("pZXfSsMwGMVfpQy88898hCzNZmBNSpqVwZBQR8WBW2XdRHwdLwRfYy9mFkdpafIlxasm+c4JPYf+6Go1Sk4/9R3aVdG0XL8U23J3qEaP16vRBEXVMSIfNxNk9klxOB+w01cV6bU54091uX8vTt/60BzQ2DxYcTjuy8/CbPBrUdeb5826pZssonizK7b68LI3j/vx+CoSZf12a7YplkqQLFVTgh9QQpjkKiGZQkwSQbmQXKI5rJQLNLfIUEwx4nqdE5HpRcqFSnhOz050nlg8KZr93WyZzUmuX8o5ZkQqzJmkbEYYpiiz3e8ImQqqLWlIUIfUG9bhawI75u3Qrjv6yQPzXNLHZkYZYphQgTJ/CbDD2wVsbyqBZZ1mYGm/IKveQBFhPmPITwMk7gLRVg5gom2zYNEe28loKyA4AmJ3vydfdLc6nBJlDO4ifEI7Nw4xAJBaLkNLGvxNOUkaVJn3BpgnZ2letZ+qbnk5YTGJ9esHsuXU2/BqxIMJa5xOyBoFxFkj8qPmK8LGD1gGaBj4Z3KVAqqAv5S3nUFp/aiBRYX4/gNcv7YQcSh2QIl91+Mv", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [RotulosAjustados = _t]), 
+  // Lista com os rótulos ajustados
+  RotulosAjustados = Tabela_Rotulos[RotulosAjustados], 
+  // Lista agrupada com os rótulos ajustados
+  Rotulos_Final = List.Zip({Rotulos_Servidor, RotulosAjustados}), 
+  // Tabela utilizando o passo anterior como nome de cada rótulo
+  Resultado = Table.RenameColumns(MOVIMENTACOES, Rotulos_Final)
+in
+  Resultado
